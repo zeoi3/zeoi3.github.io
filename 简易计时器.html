@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>锻炼计时器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #fff;
+        }
+        .container {
+            text-align: center;
+            padding: 2rem;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .settings {
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            gap: 2rem;
+            padding: 1rem 0;
+        }
+        .setting-item {
+            flex: 1;
+            padding: 0.5rem;
+        }
+        .setting-item label {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        .setting-item input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        #timer {
+            font-size: 6rem;
+            margin: 1rem 0;
+        }
+        #status {
+            font-size: 2rem;
+            margin: 1rem 0;
+        }
+        #set-counter {
+            font-size: 1.5rem;
+            margin: 1rem 0;
+        }
+        #startBtn {
+            font-size: 1.6rem;
+            padding: 0.8rem 2rem;
+            margin: 1rem auto;
+            display: block;
+            width: 80%;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+        }
+        #resetBtn {
+            font-size: 1rem;
+            padding: 0.5rem 1rem;
+            margin: 0.5rem auto;
+            display: block;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: transparent;
+            color: #999;
+            text-decoration: underline;
+        }
+        #startBtn:hover {
+            background-color: #45a049;
+        }
+        #resetBtn:hover {
+            color: #666;
+        }
+        .exercise {
+            background-color: #1677ff;
+        }
+        .rest {
+            background-color: #fff;
+        }
+        .exercise-text {
+            color: #1677ff;
+        }
+        .rest-text {
+            color: #999999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="settings">
+            <div class="setting-item">
+                <label for="exerciseTimeInput">运动时间（秒）</label>
+                <input type="number" id="exerciseTimeInput" value="5" min="1">
+            </div>
+            <div class="setting-item">
+                <label for="restTimeInput">休息时间（秒）</label>
+                <input type="number" id="restTimeInput" value="5" min="1">
+            </div>
+            <div class="setting-item">
+                <label for="totalSetsInput">总组数</label>
+                <input type="number" id="totalSetsInput" value="10" min="1">
+            </div>
+        </div>
+        <div id="timer">00:00</div>
+        <div id="status">准备开始</div>
+        <div id="set-counter">第 0/10 组</div>
+        <button id="startBtn" onclick="toggleTimer()">开始</button>
+        <button id="resetBtn" onclick="resetTimer()">重置</button>
+    </div>
+
+    </audio>
+    <audio id="exerciseSound" preload="auto" loop>
+        <source src="./clock.mp3" type="audio/mp3"/>
+    </audio>
+
+    <script>
+        let isRunning = false;
+        let currentSet = 0;
+        let totalSets = 10;
+        let exerciseTime = 5; // 默认运动时间（秒）
+        let restTime = 5; // 默认休息时间（秒）
+        let isExercise = true;
+        let timeLeft = exerciseTime;
+        let timerId = null;
+        const exerciseAudio = document.getElementById('exerciseSound');
+
+        // 更新设置
+        function updateSettings() {
+            exerciseTime = parseInt(document.getElementById('exerciseTimeInput').value) || 5;
+            restTime = parseInt(document.getElementById('restTimeInput').value) || 5;
+            totalSets = parseInt(document.getElementById('totalSetsInput').value) || 10;
+            resetTimer();
+        }
+
+        // 为设置输入框添加事件监听器
+        document.getElementById('exerciseTimeInput').addEventListener('change', updateSettings);
+        document.getElementById('restTimeInput').addEventListener('change', updateSettings);
+        document.getElementById('totalSetsInput').addEventListener('change', updateSettings);
+
+        function toggleTimer() {
+            if (isRunning) {
+                pauseTimer();
+            } else {
+                startTimer();
+            }
+        }
+
+        function startTimer() {
+            isRunning = true;
+            document.getElementById('startBtn').textContent = '暂停';
+            if (currentSet === 0) {
+                currentSet = 1;
+                updateSetCounter();
+            }
+            if (isExercise) {
+                exerciseAudio.play();
+            }
+            timerId = setInterval(updateTimer, 1000);
+        }
+
+        function pauseTimer() {
+            isRunning = false;
+            document.getElementById('startBtn').textContent = '继续';
+            clearInterval(timerId);
+            exerciseAudio.pause();
+        }
+
+        function resetTimer() {
+            isRunning = false;
+            currentSet = 0;
+            isExercise = true;
+            timeLeft = exerciseTime;
+            clearInterval(timerId);
+            exerciseAudio.pause();
+            exerciseAudio.currentTime = 0;
+            document.getElementById('startBtn').textContent = '开始';
+            updateDisplay();
+            updateSetCounter();
+            document.body.style.backgroundColor = '#f0f0f0';
+        }
+
+        function updateTimer() {
+            timeLeft--;
+            if (timeLeft < 0) {
+                if (isExercise) {
+                    if (currentSet < totalSets) {
+                        isExercise = false;
+                        timeLeft = restTime;
+                        document.body.style.backgroundColor = '#f2f5f7';
+                        exerciseAudio.pause();
+                        exerciseAudio.currentTime = 0;
+                    } else {
+                        resetTimer();
+                        return;
+                    }
+                } else {
+                    isExercise = true;
+                    timeLeft = exerciseTime;
+                    currentSet++;
+                    updateSetCounter();
+                    document.body.style.backgroundColor = '#f2f5f7';
+                    if (isRunning) {
+                        exerciseAudio.play();
+                    }
+                }
+            }
+            updateDisplay();
+        }
+
+
+        function updateDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;            
+            const status = document.getElementById('status');
+            status.textContent = isExercise ? '锻炼中' : '休息中';
+            
+            // 更新文字颜色
+            const timer = document.getElementById('timer');
+            if (isExercise) {
+                timer.className = 'exercise-text';
+                status.className = 'exercise-text';
+                document.body.style.backgroundColor = '#f2f5f7';
+            } else {
+                timer.className = 'rest-text';
+                status.className = 'rest-text';
+                document.body.style.backgroundColor = '#f2f5f7';
+            }
+        }
+
+        function updateSetCounter() {
+            document.getElementById('set-counter').textContent = 
+                `第 ${currentSet}/${totalSets} 组`;
+        }
+
+        // 初始化显示
+        updateDisplay();
+        updateSetCounter();
+    </script>
+</body>
+</html>
