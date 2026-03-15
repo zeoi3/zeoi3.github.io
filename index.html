@@ -78,6 +78,8 @@
             margin-bottom: 20px;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
             background-color: #f0f0f0; /* fallback for transparent pngs */
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-sizing: border-box;
         }
 
         .title {
@@ -184,14 +186,14 @@
                 if (!response.ok) throw new Error('API request failed');
                 
                 const data = await response.json();
-                // 找到第一个 .zip 结尾的文件
-                const zipAsset = data.assets.find(asset => asset.name.endsWith('.zip'));
+                // 找到第一个 .zip 或 .dmg 结尾的文件
+                const targetAsset = data.assets.find(asset => asset.name.endsWith('.zip') || asset.name.endsWith('.dmg'));
                 
-                if (zipAsset) {
-                    btn.href = zipAsset.browser_download_url;
+                if (targetAsset) {
+                    btn.href = targetAsset.browser_download_url;
                     btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> 下载 Mac 版`;
                 } else {
-                    // 如果没有 zip 文件，则保持链接为最新 Release 页面
+                    // 如果没有 zip/dmg 文件，则保持链接为最新 Release 页面
                     btn.innerHTML = `查看最新版本`;
                 }
             } catch (error) {
